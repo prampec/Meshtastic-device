@@ -63,6 +63,12 @@ extern void getMacAddr(uint8_t *dmac);
  */
 User &owner = devicestate.owner;
 
+std::string canned_message_plugin_message_part1;
+std::string canned_message_plugin_message_part2;
+std::string canned_message_plugin_message_part3;
+std::string canned_message_plugin_message_part4;
+std::string canned_message_plugin_message_part5;
+
 static uint8_t ourMacAddr[6];
 
 /**
@@ -190,6 +196,12 @@ void NodeDB::installDefaultDeviceState()
     sprintf(owner.id, "!%08x", getNodeNum()); // Default node ID now based on nodenum
     memcpy(owner.macaddr, ourMacAddr, sizeof(owner.macaddr));
 
+    canned_message_plugin_message_part1 = "";
+    canned_message_plugin_message_part2 = "";
+    canned_message_plugin_message_part3 = "";
+    canned_message_plugin_message_part4 = "";
+    canned_message_plugin_message_part5 = "";
+
     // Restore region if possible
     if (oldRegionCode != RegionCode_Unset)
         radioConfig.preferences.region = oldRegionCode;
@@ -270,6 +282,13 @@ void NodeDB::init()
     */
     myNodeInfo.has_wifi = true;
 #endif
+
+    // TODO: how to get the canned values?
+    canned_message_plugin_message_part1 = "";
+    canned_message_plugin_message_part2 = "";
+    canned_message_plugin_message_part3 = "";
+    canned_message_plugin_message_part4 = "";
+    canned_message_plugin_message_part5 = "";
 
     resetRadioConfig(); // If bogus settings got saved, then fix them
 
