@@ -31,7 +31,7 @@ CannedMessagePlugin::CannedMessagePlugin()
 /**
  * @brief Items in array this->messages will be set to be pointing on the right
  *     starting points of the string this->messageStore
- * 
+ *
  * @return int Returns the number of messages found.
  */
 int CannedMessagePlugin::splitConfiguredMessages()
