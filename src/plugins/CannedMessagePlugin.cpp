@@ -1,6 +1,7 @@
 #include "configuration.h"
 #include "CannedMessagePlugin.h"
 #include "MeshService.h"
+#include "FSCommon.h"
 
 // TODO: reuse defined from Screen.cpp
 #define FONT_SMALL ArialMT_Plain_10
@@ -10,11 +11,11 @@
 // Remove Canned message screen if no action is taken for some milliseconds
 #define INACTIVATE_AFTER_MS 20000
 
-static const char *cannedMessagesPart1file = "/prefs/cannedmessagespart1.proto";
-static const char *cannedMessagesPart2file = "/prefs/cannedmessagespart2.proto";
-static const char *cannedMessagesPart3file = "/prefs/cannedmessagespart3.proto";
-static const char *cannedMessagesPart4file = "/prefs/cannedmessagespart4.proto";
-static const char *cannedMessagesPart5file = "/prefs/cannedmessagespart5.proto";
+static const char *cannedMessagesPart1file = "/prefs/canned1.proto";
+static const char *cannedMessagesPart2file = "/prefs/canned2.proto";
+static const char *cannedMessagesPart3file = "/prefs/canned3.proto";
+static const char *cannedMessagesPart4file = "/prefs/canned4.proto";
+static const char *cannedMessagesPart5file = "/prefs/canned5.proto";
 
 CannedMessagePluginMessagePart1 cannedMessagePluginMessagePart1;
 CannedMessagePluginMessagePart2 cannedMessagePluginMessagePart2;
@@ -34,8 +35,10 @@ CannedMessagePlugin::CannedMessagePlugin()
 {
     if (radioConfig.preferences.canned_message_plugin_enabled)
     {
+        this->loadProtoForPlugin();
         if(this->splitConfiguredMessages() <= 0)
         {
+            // TODO: should not modify radioConfig from this code
             radioConfig.preferences.canned_message_plugin_enabled = false;
             DEBUG_MSG("CannedMessagePlugin: No messages are configured. Plugin is disabled\n");
             return;
@@ -55,10 +58,12 @@ int CannedMessagePlugin::splitConfiguredMessages()
     int messageIndex = 0;
     int i = 0;
 
-    strncpy(
-        this->messageStore,
-        radioConfig.preferences.canned_message_plugin_messages,
-        CANNED_MESSAGE_PLUGIN_MESSAGES_SIZE);
+    // get all of the message parts
+    strcpy(this->messageStore, cannedMessagePluginMessagePart1.text);
+    strcat(this->messageStore, cannedMessagePluginMessagePart2.text);
+    strcat(this->messageStore, cannedMessagePluginMessagePart3.text);
+    strcat(this->messageStore, cannedMessagePluginMessagePart4.text);
+    strcat(this->messageStore, cannedMessagePluginMessagePart5.text);
 
     this->messages[messageIndex++] =
         this->messageStore;
@@ -157,7 +162,6 @@ void CannedMessagePlugin::sendText(NodeNum dest,
         p->decoded.payload.size++;
     }
 
-
 //    PacketId prevPacketId = p->id; // In case we need it later.
 
     DEBUG_MSG("Sending message id=%d, msg=%.*s\n",
@@ -197,7 +201,7 @@ int32_t CannedMessagePlugin::runOnce()
     else if (this->currentMessageIndex == -1)
     {
         this->currentMessageIndex = 0;
-        DEBUG_MSG("First touch.\n");
+        DEBUG_MSG("First touch (%d):%s\n", this->currentMessageIndex, this->getCurrentMessage());
         e.frameChanged = true;
         this->runState = CANNED_MESSAGE_RUN_STATE_ACTIVE;
     }
@@ -216,13 +220,13 @@ int32_t CannedMessagePlugin::runOnce()
     {
         this->currentMessageIndex = getPrevIndex();
         this->runState = CANNED_MESSAGE_RUN_STATE_ACTIVE;
-        DEBUG_MSG("MOVE UP\n");
+        DEBUG_MSG("MOVE UP (%d):%s\n", this->currentMessageIndex, this->getCurrentMessage());
     }
     else if (this->runState == CANNED_MESSAGE_RUN_STATE_ACTION_DOWN)
     {
         this->currentMessageIndex = this->getNextIndex();
         this->runState = CANNED_MESSAGE_RUN_STATE_ACTIVE;
-        DEBUG_MSG("MOVE DOWN\n");
+        DEBUG_MSG("MOVE DOWN (%d):%s\n", this->currentMessageIndex, this->getCurrentMessage());
     }
 
     if (this->runState == CANNED_MESSAGE_RUN_STATE_ACTIVE)
@@ -306,25 +310,29 @@ void CannedMessagePlugin::drawFrame(
 void CannedMessagePlugin::loadProtoForPlugin()
 {
     if (!loadProto(cannedMessagesPart1file, CannedMessagePluginMessagePart1_size, sizeof(cannedMessagesPart1file), CannedMessagePluginMessagePart1_fields, &cannedMessagePluginMessagePart1)) {
-        memset(cannedMessagePluginMessagePart1.text, 0, sizeof(cannedMessagePluginMessagePart1.text));
+        installDefaultCannedMessagePluginPart1();
     }
     if (!loadProto(cannedMessagesPart2file, CannedMessagePluginMessagePart2_size, sizeof(cannedMessagesPart2file), CannedMessagePluginMessagePart2_fields, &cannedMessagePluginMessagePart2)) {
-        memset(cannedMessagePluginMessagePart2.text, 0, sizeof(cannedMessagePluginMessagePart2.text));
+        installDefaultCannedMessagePluginPart2();
     }
     if (!loadProto(cannedMessagesPart3file, CannedMessagePluginMessagePart3_size, sizeof(cannedMessagesPart3file), CannedMessagePluginMessagePart3_fields, &cannedMessagePluginMessagePart3)) {
-        memset(cannedMessagePluginMessagePart3.text, 0, sizeof(cannedMessagePluginMessagePart3.text));
+        installDefaultCannedMessagePluginPart3();
     }
     if (!loadProto(cannedMessagesPart4file, CannedMessagePluginMessagePart4_size, sizeof(cannedMessagesPart4file), CannedMessagePluginMessagePart4_fields, &cannedMessagePluginMessagePart4)) {
-        memset(cannedMessagePluginMessagePart4.text, 0, sizeof(cannedMessagePluginMessagePart4.text));
+        installDefaultCannedMessagePluginPart4();
     }
     if (!loadProto(cannedMessagesPart5file, CannedMessagePluginMessagePart5_size, sizeof(cannedMessagesPart5file), CannedMessagePluginMessagePart5_fields, &cannedMessagePluginMessagePart5)) {
-        memset(cannedMessagePluginMessagePart5.text, 0, sizeof(cannedMessagePluginMessagePart5.text));
+        installDefaultCannedMessagePluginPart5();
     }
 }
 
 bool CannedMessagePlugin::saveProtoForPlugin()
 {
     bool okay = true;
+
+#ifdef FS
+    FS.mkdir("/prefs");
+#endif
 
     okay &= saveProto(cannedMessagesPart1file, CannedMessagePluginMessagePart1_size, sizeof(CannedMessagePluginMessagePart1), CannedMessagePluginMessagePart1_fields, &cannedMessagePluginMessagePart1);
     okay &= saveProto(cannedMessagesPart2file, CannedMessagePluginMessagePart2_size, sizeof(CannedMessagePluginMessagePart2), CannedMessagePluginMessagePart2_fields, &cannedMessagePluginMessagePart2);
@@ -337,11 +345,35 @@ bool CannedMessagePlugin::saveProtoForPlugin()
 
 void CannedMessagePlugin::installProtoDefaultsForPlugin()
 {
-    // TODO: resolve code duplication!
+    installDefaultCannedMessagePluginPart1();
+    installDefaultCannedMessagePluginPart2();
+    installDefaultCannedMessagePluginPart3();
+    installDefaultCannedMessagePluginPart4();
+    installDefaultCannedMessagePluginPart5();
+}
+
+void CannedMessagePlugin::installDefaultCannedMessagePluginPart1()
+{
     memset(cannedMessagePluginMessagePart1.text, 0, sizeof(cannedMessagePluginMessagePart1.text));
+}
+
+void CannedMessagePlugin::installDefaultCannedMessagePluginPart2()
+{
     memset(cannedMessagePluginMessagePart2.text, 0, sizeof(cannedMessagePluginMessagePart2.text));
+}
+
+void CannedMessagePlugin::installDefaultCannedMessagePluginPart3()
+{
     memset(cannedMessagePluginMessagePart3.text, 0, sizeof(cannedMessagePluginMessagePart3.text));
+}
+
+void CannedMessagePlugin::installDefaultCannedMessagePluginPart4()
+{
     memset(cannedMessagePluginMessagePart4.text, 0, sizeof(cannedMessagePluginMessagePart4.text));
+}
+
+void CannedMessagePlugin::installDefaultCannedMessagePluginPart5()
+{
     memset(cannedMessagePluginMessagePart5.text, 0, sizeof(cannedMessagePluginMessagePart5.text));
 }
 
@@ -484,8 +516,10 @@ void CannedMessagePlugin::handleSetCannedMessagePluginPart1(const CannedMessageP
         DEBUG_MSG("*** from_msg.text:%s\n", from_msg.text);
     }
 
-    if (changed) // If nothing really changed, don't broadcast on the network or write to flash
-        service.reloadConfig(); // TODO: does this make sense?
+    if (changed)
+    {
+        this->saveProtoForPlugin();
+    }
 }
 
 void CannedMessagePlugin::handleSetCannedMessagePluginPart2(const CannedMessagePluginMessagePart2 &from_msg)
@@ -497,8 +531,10 @@ void CannedMessagePlugin::handleSetCannedMessagePluginPart2(const CannedMessageP
         strcpy(cannedMessagePluginMessagePart2.text, from_msg.text);
     }
 
-    if (changed) // If nothing really changed, don't broadcast on the network or write to flash
-        service.reloadConfig(); // TODO: does this make sense?
+    if (changed)
+    {
+        this->saveProtoForPlugin();
+    }
 }
 
 void CannedMessagePlugin::handleSetCannedMessagePluginPart3(const CannedMessagePluginMessagePart3 &from_msg)
@@ -510,8 +546,10 @@ void CannedMessagePlugin::handleSetCannedMessagePluginPart3(const CannedMessageP
         strcpy(cannedMessagePluginMessagePart3.text, from_msg.text);
     }
 
-    if (changed) // If nothing really changed, don't broadcast on the network or write to flash
-        service.reloadConfig(); // TODO: does this make sense?
+    if (changed)
+    {
+        this->saveProtoForPlugin();
+    }
 }
 
 void CannedMessagePlugin::handleSetCannedMessagePluginPart4(const CannedMessagePluginMessagePart4 &from_msg)
@@ -523,8 +561,10 @@ void CannedMessagePlugin::handleSetCannedMessagePluginPart4(const CannedMessageP
         strcpy(cannedMessagePluginMessagePart4.text, from_msg.text);
     }
 
-    if (changed) // If nothing really changed, don't broadcast on the network or write to flash
-        service.reloadConfig(); // TODO: does this make sense?
+    if (changed)
+    {
+        this->saveProtoForPlugin();
+    }
 }
 
 void CannedMessagePlugin::handleSetCannedMessagePluginPart5(const CannedMessagePluginMessagePart5 &from_msg)
@@ -536,6 +576,8 @@ void CannedMessagePlugin::handleSetCannedMessagePluginPart5(const CannedMessageP
         strcpy(cannedMessagePluginMessagePart5.text, from_msg.text);
     }
 
-    if (changed) // If nothing really changed, don't broadcast on the network or write to flash
-        service.reloadConfig(); // TODO: does this make sense?
+    if (changed)
+    {
+        this->saveProtoForPlugin();
+    }
 }
