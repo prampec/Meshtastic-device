@@ -198,8 +198,6 @@ void NodeDB::installDefaultDeviceState()
 
     installDefaultChannels();
     installDefaultRadioConfig();
-
-    MeshPlugin::installProtoDefaultsForAllPlugins();
 }
 
 void NodeDB::init()
@@ -372,7 +370,6 @@ void NodeDB::loadFromDisk()
         installDefaultChannels(); // Our in RAM copy might now be corrupt
     }
 
-    MeshPlugin::loadProtoForAllPlugins();
 }
 
 /** Save a protobuf from a file, return true for success */
