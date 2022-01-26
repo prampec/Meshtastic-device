@@ -150,6 +150,16 @@ class MeshPlugin
     /// Send an error response for the specified packet.
     MeshPacket *allocErrorResponse(Routing_Error err, const MeshPacket *p);
 
+  /**
+   * @brief An admin message arrived to AdminPlugin. Plugin was asked whether it want to handle the request.
+   * 
+   * @param mp The mesh packet arrived.
+   * @param request The AdminMessage request extracted from the packet.
+   * @param response The prepared response
+   * @return AdminMessageHandleResult
+   *   HANDLED if message was handled
+   *   HANDLED_WITH_RESPONSE if a response is also prepared and to be sent.
+   */
     virtual AdminMessageHandleResult handleAdminMessageForPlugin(
         const MeshPacket &mp, AdminMessage *request, AdminMessage *response) { return AdminMessageHandleResult::NOT_HANDLED; };
 

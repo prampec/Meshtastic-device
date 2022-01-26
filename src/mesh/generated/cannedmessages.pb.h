@@ -11,10 +11,10 @@
 
 /* Struct definitions */
 typedef struct _CannedMessagePluginConfig {
-    char messagesPart1[200];
-    char messagesPart2[200];
-    char messagesPart3[200];
-    char messagesPart4[200];
+    char messagesPart1[201];
+    char messagesPart2[201];
+    char messagesPart3[201];
+    char messagesPart4[201];
 } CannedMessagePluginConfig;
 
 
@@ -47,7 +47,7 @@ extern const pb_msgdesc_t CannedMessagePluginConfig_msg;
 #define CannedMessagePluginConfig_fields &CannedMessagePluginConfig_msg
 
 /* Maximum encoded size of messages (where known) */
-#define CannedMessagePluginConfig_size           808
+#define CannedMessagePluginConfig_size           812
 
 #ifdef __cplusplus
 } /* extern "C" */
