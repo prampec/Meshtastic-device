@@ -30,12 +30,14 @@ CannedMessagePlugin::CannedMessagePlugin()
         this->loadProtoForPlugin();
         if(this->splitConfiguredMessages() <= 0)
         {
-            // TODO: should not modify radioConfig from this code
-            radioConfig.preferences.canned_message_plugin_enabled = false;
             DEBUG_MSG("CannedMessagePlugin: No messages are configured. Plugin is disabled\n");
-            return;
+            this->runState = CANNED_MESSAGE_RUN_STATE_DISABLED;
         }
-        this->inputObserver.observe(inputBroker);
+        else
+        {
+            DEBUG_MSG("CannedMessagePlugin is enabled\n");
+            this->inputObserver.observe(inputBroker);
+        }
     }
 }
 
@@ -50,12 +52,21 @@ int CannedMessagePlugin::splitConfiguredMessages()
     int messageIndex = 0;
     int i = 0;
 
-    // get all of the message parts
-    strcpy(this->messageStore, cannedMessagePluginConfig.messagesPart1);
-    strcat(this->messageStore, cannedMessagePluginConfig.messagesPart2);
-    strcat(this->messageStore, cannedMessagePluginConfig.messagesPart3);
-    strcat(this->messageStore, cannedMessagePluginConfig.messagesPart4);
+    // collect all the message parts
+    strcpy(
+        this->messageStore,
+        cannedMessagePluginConfig.messagesPart1);
+    strcat(
+        this->messageStore,
+        cannedMessagePluginConfig.messagesPart2);
+    strcat(
+        this->messageStore,
+        cannedMessagePluginConfig.messagesPart3);
+    strcat(
+        this->messageStore,
+        cannedMessagePluginConfig.messagesPart4);
 
+    // The first message points to the beginning of the store.
     this->messages[messageIndex++] =
         this->messageStore;
     int upTo =
@@ -85,6 +96,7 @@ int CannedMessagePlugin::splitConfiguredMessages()
     }
     if (strlen(this->messages[messageIndex-1]) > 0)
     {
+        // We have a last message.
         DEBUG_MSG("CannedMessage %d is: '%s'\n",
             messageIndex-1, this->messages[messageIndex-1]);
         this->messagesCount = messageIndex;
@@ -105,6 +117,9 @@ int CannedMessagePlugin::handleInputEvent(const InputEvent *event)
         (strcmp(radioConfig.preferences.canned_message_plugin_allow_input_source, "_any") != 0))
     {
         // Event source is not accepted.
+        // Event only accepted if source matches the configured one, or
+        //   the configured one is "_any" (or if there is no configured
+        //   source at all)
         return 0;
     }
 
@@ -153,8 +168,6 @@ void CannedMessagePlugin::sendText(NodeNum dest,
         p->decoded.payload.size++;
     }
 
-//    PacketId prevPacketId = p->id; // In case we need it later.
-
     DEBUG_MSG("Sending message id=%d, msg=%.*s\n",
       p->id, p->decoded.payload.size, p->decoded.payload.bytes);
 
@@ -164,6 +177,7 @@ void CannedMessagePlugin::sendText(NodeNum dest,
 int32_t CannedMessagePlugin::runOnce()
 {
     if ((!radioConfig.preferences.canned_message_plugin_enabled)
+        || (this->runState == CANNED_MESSAGE_RUN_STATE_DISABLED)
         || (this->runState == CANNED_MESSAGE_RUN_STATE_INACTIVE))
     {
         return 30000; // TODO: should return MAX_VAL
@@ -305,6 +319,12 @@ void CannedMessagePlugin::loadProtoForPlugin()
     }
 }
 
+/**
+ * @brief Save the plugin config to file.
+ *
+ * @return true On success.
+ * @return false On error.
+ */
 bool CannedMessagePlugin::saveProtoForPlugin()
 {
     bool okay = true;
@@ -318,6 +338,9 @@ bool CannedMessagePlugin::saveProtoForPlugin()
     return okay;
 }
 
+/**
+ * @brief Fill configuration with default values.
+ */
 void CannedMessagePlugin::installDefaultCannedMessagePluginConfig()
 {
     memset(cannedMessagePluginConfig.messagesPart1, 0, sizeof(cannedMessagePluginConfig.messagesPart1));
@@ -326,6 +349,15 @@ void CannedMessagePlugin::installDefaultCannedMessagePluginConfig()
     memset(cannedMessagePluginConfig.messagesPart4, 0, sizeof(cannedMessagePluginConfig.messagesPart4));
 }
 
+/**
+ * @brief An admin message arrived to AdminPlugin. We are asked whether we want to handle that.
+ *
+ * @param mp The mesh packet arrived.
+ * @param request The AdminMessage request extracted from the packet.
+ * @param response The prepared response
+ * @return AdminMessageHandleResult HANDLED if message was handled
+ *   HANDLED_WITH_RESULT if a result is also prepared.
+ */
 AdminMessageHandleResult CannedMessagePlugin::handleAdminMessageForPlugin(
         const MeshPacket &mp, AdminMessage *request, AdminMessage *response)
 {
@@ -443,7 +475,8 @@ void CannedMessagePlugin::handleSetCannedMessagePluginPart1(const char *from_msg
 {
     int changed = 0;
 
-    if (*from_msg) {
+    if (*from_msg)
+    {
         changed |= strcmp(cannedMessagePluginConfig.messagesPart1, from_msg);
         strcpy(cannedMessagePluginConfig.messagesPart1, from_msg);
         DEBUG_MSG("*** from_msg.text:%s\n", from_msg);
@@ -459,7 +492,8 @@ void CannedMessagePlugin::handleSetCannedMessagePluginPart2(const char *from_msg
 {
     int changed = 0;
 
-    if (*from_msg) {
+    if (*from_msg)
+    {
         changed |= strcmp(cannedMessagePluginConfig.messagesPart2, from_msg);
         strcpy(cannedMessagePluginConfig.messagesPart2, from_msg);
     }
@@ -474,7 +508,8 @@ void CannedMessagePlugin::handleSetCannedMessagePluginPart3(const char *from_msg
 {
     int changed = 0;
 
-    if (*from_msg) {
+    if (*from_msg)
+    {
         changed |= strcmp(cannedMessagePluginConfig.messagesPart3, from_msg);
         strcpy(cannedMessagePluginConfig.messagesPart3, from_msg);
     }
@@ -489,7 +524,8 @@ void CannedMessagePlugin::handleSetCannedMessagePluginPart4(const char *from_msg
 {
     int changed = 0;
 
-    if (*from_msg) {
+    if (*from_msg)
+    {
         changed |= strcmp(cannedMessagePluginConfig.messagesPart4, from_msg);
         strcpy(cannedMessagePluginConfig.messagesPart4, from_msg);
     }
