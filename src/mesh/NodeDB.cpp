@@ -369,7 +369,6 @@ void NodeDB::loadFromDisk()
     if (!loadProto(channelfile, ChannelFile_size, sizeof(ChannelFile), ChannelFile_fields, &channelFile)) {
         installDefaultChannels(); // Our in RAM copy might now be corrupt
     }
-
 }
 
 /** Save a protobuf from a file, return true for success */

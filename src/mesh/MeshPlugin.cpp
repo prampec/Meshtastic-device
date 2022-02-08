@@ -18,12 +18,11 @@ MeshPacket *MeshPlugin::currentReply;
 
 MeshPlugin::MeshPlugin(const char *_name) : name(_name)
 {
-    DEBUG_MSG("in constructor for:%s\n", _name);
     // Can't trust static initalizer order, so we check each time
     if (!plugins)
         plugins = new std::vector<MeshPlugin *>();
+
     plugins->push_back(this);
-    DEBUG_MSG("added to plugins\n");
 }
 
 void MeshPlugin::setup() {}
@@ -257,7 +256,6 @@ void MeshPlugin::observeUIEvents(
 
 AdminMessageHandleResult MeshPlugin::handleAdminMessageForAllPlugins(const MeshPacket &mp, AdminMessage *request, AdminMessage *response)
 {
-    DEBUG_MSG("top of handleAdminMessageForAllPlugins\n");
     AdminMessageHandleResult handled = AdminMessageHandleResult::NOT_HANDLED;
     if (plugins) {
         for (auto i = plugins->begin(); i != plugins->end(); ++i) {
@@ -280,6 +278,5 @@ AdminMessageHandleResult MeshPlugin::handleAdminMessageForAllPlugins(const MeshP
             }
         }
     }
-    DEBUG_MSG("bottom of handleAdminMessageForAllPlugins\n");
     return handled;
 }

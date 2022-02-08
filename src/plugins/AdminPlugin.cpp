@@ -115,7 +115,6 @@ bool AdminPlugin::handleReceivedProtobuf(const MeshPacket &mp, AdminMessage *r)
         break;
     }
 
-
 #ifdef PORTDUINO
     case AdminMessage_exit_simulator_tag:
         DEBUG_MSG("Exiting simulator\n");
